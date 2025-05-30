@@ -1,0 +1,75 @@
+name: KI update trigger
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/code/target-file.txt'
+
+jobs:
+  notify_slack_on_file_update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for accurate diffing of all changes
+
+      - name: Get changed files (for conditional notification)
+        id: changed-files
+        uses: tj-actions/changed-files@v4
+        with:
+          files: |
+            src/code/target-file.txt
+
+      - name: Prepare Slack message content
+        id: slack_message_content
+        run: |
+          # Initialize variables
+          MESSAGE_TEXT=""
+          COLOR=""
+          FILE=""
+
+          # Determine the event type and details
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            REF_TYPE="branch"
+            REF_NAME="${{ github.ref_name }}"
+            COMMIT_SHA="${{ github.sha }}"
+            ACTOR="${{ github.actor }}"
+            COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+            REPOSITORY="${{ github.repository }}"
+            ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+            FILE=$(git diff --name-only HEAD~1 HEAD | grep -E '^src/code/target-file.txt$' || true)
+
+            if [[ -n "$FILE" ]]; then
+              MESSAGE_TEXT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀"
+              COLOR="good"
+              MESSAGE_TEXT+="\\n*Repository:* ${{ github.repository }}"
+              MESSAGE_TEXT+="\\n*Committer:* ${{ github.actor }}"
+              MESSAGE_TEXT+="\\n*Commit Message:* \`${COMMIT_MESSAGE}\`"
+              MESSAGE_TEXT+="\\n*Files Changed:*\\n\`\`\`\\n${FILE}\\n\`\`\`"
+              MESSAGE_TEXT+="\\n<${ACTION_URL}|View Action Run>"
+            fi
+          fi
+
+          # Set output variables
+          echo "slack_message_text=${MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
+          echo "slack_color=${COLOR}" >> "$GITHUB_OUTPUT"
+
+      - name: Send Slack Notification
+        if: success() && steps.slack_message_content.outputs.slack_message_text != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "${{ steps.slack_message_content.outputs.slack_message_text }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.slack_message_content.outputs.slack_color }}"
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KI_SLACK_WEBHOOK_URL }} # Reference the secret
