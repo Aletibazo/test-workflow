@@ -29,13 +29,13 @@ jobs:
         id: slack_message_content
         run: |
           # Initialize variables
-          MESSAGE_TEXT=""
+          MESSAGE_TEXT_CONTENT="" # Renamed to avoid confusion, this holds the actual message body
           COLOR=""
           FILE_LIST=""
 
           # Define a unique delimiter for multiline output
           # Make sure this delimiter doesn't appear in your actual message content
-          DELIMITER="EOF_SLACK_MESSAGE"
+          DELIMITER="EOF_SLACK_MESSAGE" # Use a delimiter unlikely to be in your text
 
           # Determine the event type and details
           if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -50,9 +50,8 @@ jobs:
             FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
 
             if [[ -n "$FILE_LIST" ]]; then
-              # Start the message content with the delimiter
-              MESSAGE_TEXT="${DELIMITER}
-              *File(s) updated in push to \`${REF_NAME}\`!* 🚀
+              # Construct the actual message content without the delimiter
+              MESSAGE_TEXT_CONTENT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀
               *Repository:* ${{ github.repository }}
               *Committer:* ${{ github.actor }}
               *Commit Message:* \`${COMMIT_MESSAGE}\`
@@ -60,19 +59,47 @@ jobs:
               \`\`\`
               ${FILE_LIST}
               \`\`\`
-              <${ACTION_URL}|View Action Run>
-              ${DELIMITER}" # End the message content with the delimiter
+              <${ACTION_URL}|View Action Run>"
               COLOR="good"
             fi
-          # Add the pull_request logic here if you want it (as per previous example)
-          # elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          #   ... (similar logic for PRs)
+
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            PR_URL="${{ github.event.pull_request.html_url }}"
+            PR_MERGED_BY="${{ github.event.pull_request.merged_by.login }}"
+            PR_STATE="${{ github.event.action }}"
+            ACTOR="${{ github.actor }}"
+            REPOSITORY="${{ github.repository }}"
+            ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+            if [[ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]]; then
+              MESSAGE_TEXT_CONTENT="*Relevant file(s) changed in Pull Request #${PR_NUMBER}!* 🎉
+              *Repository:* ${{ github.repository }}
+              *PR Title:* <${PR_URL}|${PR_TITLE}>
+              *Action:* ${PR_STATE}
+              *Opened By:* ${{ github.event.pull_request.user.login }}
+              *Files Changed (relevant only):*
+              \`\`\`
+              ${{ steps.changed-files.outputs.all_changed_files }}
+              \`\`\`
+              <${ACTION_URL}|View Action Run>"
+              COLOR="good"
+            fi
           fi
 
-          # Set output variables using the delimiter
-          echo "slack_message_text<<$DELIMITER" >> "$GITHUB_OUTPUT"
-          echo "${MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
-          echo "$DELIMITER" >> "$GITHUB_OUTPUT"
+          # Set output variables using the delimiter syntax
+          # Only write the message content if it's not empty
+          if [[ -n "$MESSAGE_TEXT_CONTENT" ]]; then
+            echo "slack_message_text<<$DELIMITER" >> "$GITHUB_OUTPUT"
+            echo "${MESSAGE_TEXT_CONTENT}" >> "$GITHUB_OUTPUT"
+            echo "$DELIMITER" >> "$GITHUB_OUTPUT"
+          else
+            # If no relevant files changed, ensure the output is still set, but empty.
+            # This prevents subsequent steps from failing if they expect the output.
+            echo "slack_message_text=" >> "$GITHUB_OUTPUT"
+          fi
+
           echo "slack_color=${COLOR}" >> "$GITHUB_OUTPUT"
 
       - name: Send Slack Notification
