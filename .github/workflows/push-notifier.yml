@@ -33,6 +33,10 @@ jobs:
           COLOR=""
           FILE_LIST=""
 
+          # Define a unique delimiter for multiline output
+          # Make sure this delimiter doesn't appear in your actual message content
+          DELIMITER="EOF_SLACK_MESSAGE"
+
           # Determine the event type and details
           if [[ "${{ github.event_name }}" == "push" ]]; then
             REF_TYPE="branch"
@@ -46,21 +50,32 @@ jobs:
             FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
 
             if [[ -n "$FILE_LIST" ]]; then
-              MESSAGE_TEXT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀"
+              # Start the message content with the delimiter
+              MESSAGE_TEXT="${DELIMITER}
+              *File(s) updated in push to \`${REF_NAME}\`!* 🚀
+              *Repository:* ${{ github.repository }}
+              *Committer:* ${{ github.actor }}
+              *Commit Message:* \`${COMMIT_MESSAGE}\`
+              *Files Changed:*
+              \`\`\`
+              ${FILE_LIST}
+              \`\`\`
+              <${ACTION_URL}|View Action Run>
+              ${DELIMITER}" # End the message content with the delimiter
               COLOR="good"
-              MESSAGE_TEXT+="\\n*Repository:* ${{ github.repository }}"
-              MESSAGE_TEXT+="\\n*Committer:* ${{ github.actor }}"
-              MESSAGE_TEXT+="\\n*Commit Message:* \`${COMMIT_MESSAGE}\`"
-              MESSAGE_TEXT+="\\n*Files Changed:*\\n\`\`\`\\n${FILE_LIST}\\n\`\`\`"
-              MESSAGE_TEXT+="\\n<${ACTION_URL}|View Action Run>"
             fi
+          # Add the pull_request logic here if you want it (as per previous example)
+          # elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          #   ... (similar logic for PRs)
           fi
 
-          # Set output variables
-          echo "slack_message_text=${MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
+          # Set output variables using the delimiter
+          echo "slack_message_text<<$DELIMITER" >> "$GITHUB_OUTPUT"
+          echo "${MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
+          echo "$DELIMITER" >> "$GITHUB_OUTPUT"
           echo "slack_color=${COLOR}" >> "$GITHUB_OUTPUT"
 
-      - name: Send Slack Notification
+          - name: Send Slack Notification
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
         uses: slackapi/slack-github-action@v1.26.0
         with:
