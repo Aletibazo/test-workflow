@@ -55,7 +55,6 @@ jobs:
             ${FILE_LIST}
             \`\`\`
             <${ACTION_URL}|View Action Run>"
-            COLOR="good"
           fi
 
           ESCAPED_MESSAGE_TEXT=""
@@ -71,13 +70,19 @@ jobs:
             echo "slack_message_text=" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "slack_color=${COLOR}" >> "$GITHUB_OUTPUT"
-
       - name: Send Slack Notification
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          payload: '{ "text": ${{ steps.slack_message_content.outputs.slack_message_text }}, "attachments": [ { "color": "${{ steps.slack_message_content.outputs.slack_color }}" } ] }'
+          payload: '{
+            "text": "Release Notes Updated",
+            "attachments": [
+              {
+                "text": ${{ steps.slack_message_content.outputs.slack_message_text }},
+                "color": "good"
+              }
+            ]
+            }'
 
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KI_SLACK_WEBHOOK_URL }}
