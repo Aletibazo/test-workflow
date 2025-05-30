@@ -75,7 +75,7 @@ jobs:
           echo "$DELIMITER" >> "$GITHUB_OUTPUT"
           echo "slack_color=${COLOR}" >> "$GITHUB_OUTPUT"
 
-          - name: Send Slack Notification
+      - name: Send Slack Notification
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
         uses: slackapi/slack-github-action@v1.26.0
         with:
