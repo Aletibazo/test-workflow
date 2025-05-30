@@ -5,7 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'src/code/target-file.txt'
+      - 'source/intro_release_notes/release_notes/known_issues.rst'
+      - 'source/intro_release_notes/release_notes_enterprise/*'
 
 jobs:
   notify_slack_on_file_update:
@@ -21,7 +22,8 @@ jobs:
         uses: tj-actions/changed-files@v4
         with:
           files: |
-            src/code/target-file.txt
+            source/intro_release_notes/release_notes/known_issues.rst
+            source/intro_release_notes/release_notes_enterprise/*
 
       - name: Prepare Slack message content
         id: slack_message_content
@@ -29,7 +31,7 @@ jobs:
           # Initialize variables
           MESSAGE_TEXT=""
           COLOR=""
-          FILE=""
+          FILE_LIST=""
 
           # Determine the event type and details
           if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -41,15 +43,15 @@ jobs:
             REPOSITORY="${{ github.repository }}"
             ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-            FILE=$(git diff --name-only HEAD~1 HEAD | grep -E '^src/code/target-file.txt$' || true)
+            FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/*$' || true)
 
-            if [[ -n "$FILE" ]]; then
+            if [[ -n "$FILE_LIST" ]]; then
               MESSAGE_TEXT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀"
               COLOR="good"
               MESSAGE_TEXT+="\\n*Repository:* ${{ github.repository }}"
               MESSAGE_TEXT+="\\n*Committer:* ${{ github.actor }}"
               MESSAGE_TEXT+="\\n*Commit Message:* \`${COMMIT_MESSAGE}\`"
-              MESSAGE_TEXT+="\\n*Files Changed:*\\n\`\`\`\\n${FILE}\\n\`\`\`"
+              MESSAGE_TEXT+="\\n*Files Changed:*\\n\`\`\`\\n${FILE_LIST}\\n\`\`\`"
               MESSAGE_TEXT+="\\n<${ACTION_URL}|View Action Run>"
             fi
           fi
