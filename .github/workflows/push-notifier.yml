@@ -112,4 +112,4 @@ jobs:
           payload: '{ "text": ${{ steps.slack_message_content.outputs.slack_message_text }}, "attachments": [ { "color": "${{ steps.slack_message_content.outputs.slack_color }}" } ] }'
 
         env:
-          KI_SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          KI_SLACK_WEBHOOK_URL: ${{ secrets.KI_SLACK_WEBHOOK_URL }}
