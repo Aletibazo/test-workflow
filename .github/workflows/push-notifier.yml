@@ -74,15 +74,14 @@ jobs:
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          payload: '{
-            "text": "Release Notes Updated",
-            "attachments": [
-              {
-                "text": ${{ steps.slack_message_content.outputs.slack_message_text }},
-                "color": "good"
-              }
-            ]
-            }'
-
+          payload: |
+            {
+              "attachments": [
+                {
+                  "color": "good",
+                  "text": ${{ steps.slack_message_content.outputs.slack_message_text }}
+                }
+              ]
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KI_SLACK_WEBHOOK_URL }}
