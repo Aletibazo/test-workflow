@@ -1,0 +1,1 @@
+- Resolved issue 1
