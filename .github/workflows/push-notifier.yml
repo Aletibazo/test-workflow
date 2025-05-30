@@ -7,11 +7,6 @@ on:
     paths:
       - 'source/intro_release_notes/release_notes/known_issues.rst'
       - 'source/intro_release_notes/release_notes_enterprise/*.rst'
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'source/intro_release_notes/release_notes/known_issues.rst'
-      - 'source/intro_release_notes/release_notes_enterprise/*.rst'
 
 jobs:
   notify_slack_on_file_update:
@@ -40,54 +35,27 @@ jobs:
 
           DELIMITER="EOF_SLACK_MESSAGE"
 
-          # Determine the event type and details
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            REF_TYPE="branch"
-            REF_NAME="${{ github.ref_name }}"
-            COMMIT_SHA="${{ github.sha }}"
-            ACTOR="${{ github.actor }}"
-            COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
-            REPOSITORY="${{ github.repository }}"
-            ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          REF_TYPE="branch"
+          REF_NAME="${{ github.ref_name }}"
+          COMMIT_SHA="${{ github.sha }}"
+          ACTOR="${{ github.actor }}"
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          REPOSITORY="${{ github.repository }}"
+          ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-            FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
+          FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
 
-            if [[ -n "$FILE_LIST" ]]; then
-              MESSAGE_TEXT_CONTENT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀
-              *Repository:* ${{ github.repository }}
-              *Committer:* ${{ github.actor }}
-              *Commit Message:* \`${COMMIT_MESSAGE}\`
-              *Files Changed:*
-              \`\`\`
-              ${FILE_LIST}
-              \`\`\`
-              <${ACTION_URL}|View Action Run>"
-              COLOR="good"
-            fi
-
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-            PR_TITLE="${{ github.event.pull_request.title }}"
-            PR_URL="${{ github.event.pull_request.html_url }}"
-            PR_MERGED_BY="${{ github.event.pull_request.merged_by.login }}"
-            PR_STATE="${{ github.event.action }}"
-            ACTOR="${{ github.actor }}"
-            REPOSITORY="${{ github.repository }}"
-            ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-            if [[ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]]; then
-              MESSAGE_TEXT_CONTENT="*Relevant file(s) changed in Pull Request #${PR_NUMBER}!* 🎉
-              *Repository:* ${{ github.repository }}
-              *PR Title:* <${PR_URL}|${PR_TITLE}>
-              *Action:* ${PR_STATE}
-              *Opened By:* ${{ github.event.pull_request.user.login }}
-              *Files Changed (relevant only):*
-              \`\`\`
-              ${{ steps.changed-files.outputs.all_changed_files }}
-              \`\`\`
-              <${ACTION_URL}|View Action Run>"
-              COLOR="good"
-            fi
+          if [[ -n "$FILE_LIST" ]]; then
+            MESSAGE_TEXT_CONTENT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀
+            *Repository:* ${{ github.repository }}
+            *Committer:* ${{ github.actor }}
+            *Commit Message:* \`${COMMIT_MESSAGE}\`
+            *Files Changed:*
+            \`\`\`
+            ${FILE_LIST}
+            \`\`\`
+            <${ACTION_URL}|View Action Run>"
+            COLOR="good"
           fi
 
           ESCAPED_MESSAGE_TEXT=""
