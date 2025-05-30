@@ -29,13 +29,11 @@ jobs:
         id: slack_message_content
         run: |
           # Initialize variables
-          MESSAGE_TEXT_CONTENT="" # Renamed to avoid confusion, this holds the actual message body
+          MESSAGE_TEXT_CONTENT=""
           COLOR=""
           FILE_LIST=""
 
-          # Define a unique delimiter for multiline output
-          # Make sure this delimiter doesn't appear in your actual message content
-          DELIMITER="EOF_SLACK_MESSAGE" # Use a delimiter unlikely to be in your text
+          DELIMITER="EOF_SLACK_MESSAGE"
 
           # Determine the event type and details
           if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -50,7 +48,6 @@ jobs:
             FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
 
             if [[ -n "$FILE_LIST" ]]; then
-              # Construct the actual message content without the delimiter
               MESSAGE_TEXT_CONTENT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀
               *Repository:* ${{ github.repository }}
               *Committer:* ${{ github.actor }}
@@ -64,7 +61,7 @@ jobs:
             fi
 
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            PR_NUMBER="${{ github.event.pull_request.number }}"
+            PR_NUMBER="${{ github.event.pull_request.number }"
             PR_TITLE="${{ github.event.pull_request.title }}"
             PR_URL="${{ github.event.pull_request.html_url }}"
             PR_MERGED_BY="${{ github.event.pull_request.merged_by.login }}"
@@ -88,15 +85,16 @@ jobs:
             fi
           fi
 
-          # Set output variables using the delimiter syntax
-          # Only write the message content if it's not empty
+          ESCAPED_MESSAGE_TEXT=""
           if [[ -n "$MESSAGE_TEXT_CONTENT" ]]; then
+              ESCAPED_MESSAGE_TEXT=$(jq -R -s '.' <<< "$MESSAGE_TEXT_CONTENT")
+          fi
+
+          if [[ -n "$ESCAPED_MESSAGE_TEXT" ]]; then
             echo "slack_message_text<<$DELIMITER" >> "$GITHUB_OUTPUT"
-            echo "${MESSAGE_TEXT_CONTENT}" >> "$GITHUB_OUTPUT"
+            echo "${ESCAPED_MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
             echo "$DELIMITER" >> "$GITHUB_OUTPUT"
           else
-            # If no relevant files changed, ensure the output is still set, but empty.
-            # This prevents subsequent steps from failing if they expect the output.
             echo "slack_message_text=" >> "$GITHUB_OUTPUT"
           fi
 
@@ -106,14 +104,7 @@ jobs:
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          payload: |
-            {
-              "text": "${{ steps.slack_message_content.outputs.slack_message_text }}",
-              "attachments": [
-                {
-                  "color": "${{ steps.slack_message_content.outputs.slack_color }}"
-                }
-              ]
-            }
+          payload: '{ "text": ${{ steps.slack_message_content.outputs.slack_message_text }}, "attachments": [ { "color": "${{ steps.slack_message_content.outputs.slack_color }}" } ] }'
+
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.KI_SLACK_WEBHOOK_URL }} # Reference the secret
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
