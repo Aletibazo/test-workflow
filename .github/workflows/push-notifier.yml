@@ -76,6 +76,7 @@ jobs:
         with:
           payload: |
             {
+              "text": "Detected change in repository ${{ github.repository }}"
               "attachments": [
                 {
                   "color": "good",
