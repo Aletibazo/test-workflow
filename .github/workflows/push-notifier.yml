@@ -1,4 +1,4 @@
-name: KI update trigger
+name: KI update notifier
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Needed for accurate diffing of all changes
+          fetch-depth: 0
 
       - name: Get changed files (for conditional notification)
         id: changed-files
@@ -31,8 +31,6 @@ jobs:
           # Initialize variables
           MESSAGE_TEXT_CONTENT=""
           FILE_LIST=""
-
-          DELIMITER="EOF_SLACK_MESSAGE"
 
           REF_TYPE="branch"
           REF_NAME="${{ github.ref_name }}"
@@ -61,13 +59,7 @@ jobs:
               ESCAPED_MESSAGE_TEXT=$(jq -R -s '.' <<< "$MESSAGE_TEXT_CONTENT")
           fi
 
-          if [[ -n "$ESCAPED_MESSAGE_TEXT" ]]; then
-            echo "slack_message_text<<$DELIMITER" >> "$GITHUB_OUTPUT"
-            echo "${ESCAPED_MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
-            echo "$DELIMITER" >> "$GITHUB_OUTPUT"
-          else
-            echo "slack_message_text=" >> "$GITHUB_OUTPUT"
-          fi
+          echo "slack_message_text=${ESCAPED_MESSAGE_TEXT}" >> "$GITHUB_OUTPUT"
 
       - name: Send Slack Notification
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
