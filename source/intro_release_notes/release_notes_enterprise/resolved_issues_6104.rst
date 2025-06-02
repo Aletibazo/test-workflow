@@ -1,2 +1,3 @@
 - Resolved issue 1 - 6.10
 - Resolved issue 2 - 6.10.4
+- Resolved issue 3 - 6.10.4
