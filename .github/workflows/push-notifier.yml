@@ -45,7 +45,7 @@ jobs:
           FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
 
           if [[ -n "$FILE_LIST" ]]; then
-            MESSAGE_TEXT_CONTENT="*File(s) updated in push to \`${REF_NAME}\`!* 🚀
+            MESSAGE_TEXT_CONTENT="@channel *File(s) updated in push to \`${REF_NAME}\`!*
             *Repository:* ${{ github.repository }}
             *Committer:* ${{ github.actor }}
             *Commit Message:* \`${COMMIT_MESSAGE}\`
