@@ -30,7 +30,6 @@ jobs:
         run: |
           # Initialize variables
           MESSAGE_TEXT_CONTENT=""
-          COLOR=""
           FILE_LIST=""
 
           DELIMITER="EOF_SLACK_MESSAGE"
@@ -79,6 +78,10 @@ jobs:
           payload: |
             text: "Known Issues change detected"
             blocks:
+              - type: "header"
+                text:
+                  type: "mrkdwn"
+                  text: "Known Issues change detected"
               - type: "section"
                 text:
                   type: "mrkdwn"
