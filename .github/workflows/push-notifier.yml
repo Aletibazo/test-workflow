@@ -19,7 +19,7 @@ jobs:
 
       - name: Get changed files (for conditional notification)
         id: changed-files
-        uses: tj-actions/changed-files@v4
+        uses: tj-actions/changed-files@v46.0.5
         with:
           files: |
             source/intro_release_notes/release_notes/known_issues.rst
@@ -74,11 +74,16 @@ jobs:
         uses: slackapi/slack-github-action@v2.1.0
         with:
           webhook: ${{ secrets.KI_SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
           payload: |
-            text: "Known Issues change detected"
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: ${{ steps.slack_message_content.outputs.slack_message_text }}
+            {
+              "text": "Known Issues change detected",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ${{ steps.slack_message_content.outputs.slack_message_text }}
+                  }
+                }
+              ]
+            }
