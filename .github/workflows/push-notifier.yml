@@ -72,17 +72,14 @@ jobs:
 
       - name: Send Slack Notification
         if: success() && steps.slack_message_content.outputs.slack_message_text != ''
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v2.1.0
         with:
+          webhook: ${{ secrets.KI_SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
-            {
-              "text": "Detected change in repository ${{ github.repository }}"
-              "attachments": [
-                {
-                  "color": "good",
-                  "text": ${{ steps.slack_message_content.outputs.slack_message_text }}
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.KI_SLACK_WEBHOOK_URL }}
+            text: "Known Issues change detected"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ${{ steps.slack_message_content.outputs.slack_message_text }}
