@@ -29,11 +29,8 @@ jobs:
         id: slack_message_content
         run: |
           MESSAGE_TEXT_CONTENT=""
-          FILE_LIST=""
 
-          FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/resolved_issues.*\.rst$' || true)
-
-          if [[ -n "$FILE_LIST" ]]; then
+          if [[ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]]; then
             MESSAGE_TEXT_CONTENT="@channel *Known Issues or Resolved Issues change detected!*
             *Repository:* ${{ github.repository }}
             *Branch:* ${{ github.ref_name }}
@@ -41,7 +38,7 @@ jobs:
             *Commit Message:* \`${{ github.event.head_commit.message }}\`
             *Files Changed:*
             \`\`\`
-            ${FILE_LIST}
+            ${{ steps.changed-files.outputs.all_changed_files }}
             \`\`\`
             <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Action Run>"
           fi
