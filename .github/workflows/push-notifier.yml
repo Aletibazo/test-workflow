@@ -28,30 +28,21 @@ jobs:
       - name: Prepare Slack message content
         id: slack_message_content
         run: |
-          # Initialize variables
           MESSAGE_TEXT_CONTENT=""
           FILE_LIST=""
-
-          REF_TYPE="branch"
-          REF_NAME="${{ github.ref_name }}"
-          COMMIT_SHA="${{ github.sha }}"
-          ACTOR="${{ github.actor }}"
-          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
-          REPOSITORY="${{ github.repository }}"
-          ACTION_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           FILE_LIST=$(git diff --name-only HEAD~1 HEAD | grep -E '^source/intro_release_notes/release_notes/known_issues.rst|source/intro_release_notes/release_notes_enterprise/.*\.rst$' || true)
 
           if [[ -n "$FILE_LIST" ]]; then
-            MESSAGE_TEXT_CONTENT="@channel *File(s) updated in push to \`${REF_NAME}\`!*
+            MESSAGE_TEXT_CONTENT="@channel *File(s) updated in push to \`${{ github.ref_name }}\`!*
             *Repository:* ${{ github.repository }}
             *Committer:* ${{ github.actor }}
-            *Commit Message:* \`${COMMIT_MESSAGE}\`
+            *Commit Message:* \`${{ github.event.head_commit.message }}\`
             *Files Changed:*
             \`\`\`
             ${FILE_LIST}
             \`\`\`
-            <${ACTION_URL}|View Action Run>"
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Action Run>"
           fi
 
           ESCAPED_MESSAGE_TEXT=""
